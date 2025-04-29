@@ -1,0 +1,79 @@
+# EC2 with EFS - Multi OS Setup on AWS
+
+## 📌 Description
+This project demonstrates how to set up a shared file system using Amazon EFS (Elastic File System) and mount it to **three different EC2 instances** running different operating systems — Ubuntu, Red Hat Linux, and Amazon Linux 2. The setup allows all instances to share files via a common EFS mount point.
+
+## 🧰 AWS Services Used
+- Amazon EC2 (Ubuntu, Red Hat, Amazon Linux 2)
+- Amazon EFS (Elastic File System)
+- Security Groups
+- IAM Role (AmazonEC2FullAccess, AmazonElasticFileSystemFullAccess)
+
+## 🛠️ Architecture Overview
+- One EFS created in a selected VPC and availability zone(s)
+- Three EC2 instances launched with different OS types
+- EFS is mounted on all three instances using NFS protocol
+- Files written from one instance are accessible from all others
+
+## ✅ Steps Followed
+
+1. **Create an EFS File System**
+   - Go to AWS Console → EFS → Create file system
+   - Select VPC and availability zones (make sure they match EC2 AZs)
+   - Use default settings (or custom as needed)
+
+2. **Launch EC2 Instances**
+   - Launch 3 EC2 instances:
+     - One with Ubuntu
+     - One with Red Hat Linux
+     - One with Amazon Linux 2
+   - Ensure they are in the same VPC and availability zones as the EFS
+   - Create or assign a security group allowing **inbound NFS (port 2049)** from EFS and between EC2s
+
+3. **Install NFS Client on Each EC2 Instance**
+   - SSH into each EC2 instance and run:
+     - **Amazon Linux 2:**
+       ```bash
+       sudo yum install -y amazon-efs-utils
+       ```
+     - **Ubuntu:**
+       ```bash
+       sudo apt-get update
+       sudo apt-get install -y nfs-common
+       ```
+     - **Red Hat:**
+       ```bash
+       sudo yum install -y nfs-utils
+       ```
+
+4. **Mount the EFS File System**
+   - Create a mount directory:
+     ```bash
+     sudo mkdir /efs
+     ```
+   - Mount the EFS (replace `fs-xxxxxxxx` with your EFS ID):
+     ```bash
+     sudo mount -t efs fs-xxxxxxxx:/ /efs
+     ```
+
+5. **Test File Sharing**
+   - Create a file in `/efs` directory from one instance:
+     ```bash
+     echo "Test from Ubuntu" | sudo tee /efs/ubuntu.txt
+     ```
+   - SSH into other EC2s and check if file is visible:
+     ```bash
+     ls /efs
+     cat /efs/ubuntu.txt
+     ```
+
+## 📸 Output
+- All instances can see and edit the same files from `/efs`
+- Successfully mounted EFS on all three EC2s
+- Demonstrated cross-OS file sharing
+
+## 💬 Notes
+- Ensure NFS port 2049 is open in security groups
+- EFS and EC2s must be in the same region and VPC
+
+## 📁 Folder Structure (Optional)
